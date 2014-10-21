@@ -10,6 +10,7 @@
  * For example, "man fork" (or "man 2 fork" or man -s 2 fork") requires:
  *   <sys/types.h> and <unistd.h>
  */
+#include <errno.h> /*to use errno*/
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -67,7 +68,7 @@ static void getargs(char cmd[], int *argcp, char *argv[])
     char *cmdp = cmd;
     char *end;
     int i = 0;
-
+	
     /* fgets creates null-terminated string. stdin is pre-defined C constant
      *   for standard intput.  feof(stdin) tests for file:end-of-file.
      */
@@ -115,6 +116,14 @@ int main(int argc, char *argv[])
     char *childargv[MAXARGS];
     int childargc;
 
+    if (argc >1){ // assosicate stdin  to the file.
+        stdin = freopen(argv[1], "r", stdin);
+        if(stdin == NULL) {
+            perror("stdin is null!");
+            exit(1);
+        }
+    }
+ 
     while (1) {
         printf("%% "); /* printf uses %d, %s, %x, etc.  See 'man 3 printf' */
         fflush(stdout); /* flush from output buffer to terminal itself */
