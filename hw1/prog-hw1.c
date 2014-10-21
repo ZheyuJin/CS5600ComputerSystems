@@ -23,12 +23,17 @@
 /* In C, "static" means not visible outside of file.  This is different
  * from the usage of "static" in Java.
  * Note that end_ptr is an output parameter.
+ * 
  */
 static char * getword(char * begin, char **end_ptr) {
     char * end = begin;
 
     while ( *begin == ' ' )
         begin++;  /* Get rid of leading spaces. */
+    
+    if('#' == *begin) /*on spot of a '#' character*/
+	while ('\n' != *begin) begin++;
+    
     end = begin;
     while ( *end != '\0' && *end != '\n' && *end != ' ' )
         end++;  /* Keep going. */
