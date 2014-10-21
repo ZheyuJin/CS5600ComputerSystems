@@ -31,29 +31,29 @@ static char * getword(char * begin, char **end_ptr) {
     char * paver = NULL;
     while ( *begin == ' ' )
         begin++;  /* Get rid of leading spaces. */
-         
+
     end = begin;
 
     /* '#' is for the beginning fo comment, which should be treated as
-	end of the command line.*/
+       end of the command line.*/
     while ( *end != '\0' && *end != '\n' && *end != ' ' && *end !='#')
         end++;  /* Keep going. */
 
-    if(*end == '#') { /*pave all chars afterward as '\0'*/
-	paver = end;
-	while(*paver != '\0')
-	    *(paver++) = '\0' ;
+    if(*end == '#') { // pave all chars afterward as '\0' BUG1 done.
+        paver = end;
+        while(*paver != '\0')
+            *(paver++) = '\0' ;
     }
-	
+
     if ( end == begin )
         return NULL;  /* if no more words, return NULL */
     *end = '\0';  /* else put string terminator at end of this word. */
     *end_ptr = end;
     if (begin[0] == '$') { /* if this is a variable to be expanded */
         begin = getenv(begin+1); /* begin+1, to skip past '$' */
-	if (begin == NULL) {
-	    perror("getenv");
-	    begin = "UNDEFINED";
+        if (begin == NULL) {
+            perror("getenv");
+            begin = "UNDEFINED";
         }
     }
     return begin; /* This word is now a null-terminated string.  return it. */
@@ -68,7 +68,7 @@ static void getargs(char cmd[], int *argcp, char *argv[])
     char *cmdp = cmd;
     char *end;
     int i = 0;
-	
+
     /* fgets creates null-terminated string. stdin is pre-defined C constant
      *   for standard intput.  feof(stdin) tests for file:end-of-file.
      */
@@ -80,7 +80,7 @@ static void getargs(char cmd[], int *argcp, char *argv[])
         /* getword converts word into null-terminated string */
         argv[i++] = cmdp;
         /* "end" brings us only to the '\0' at end of string */
-	cmdp = end + 1;
+        cmdp = end + 1;
     }
     argv[i] = NULL; /* Create additional null word at end for safety. */
     *argcp = i;
@@ -97,17 +97,21 @@ static void execute(int argc, char *argv[])
     }
     if (childpid == 0) { /* child:  in child, childpid was set to 0 */
         /* Executes command in argv[0];  It searches for that file in
-	 *  the directories specified by the environment variable PATH.
+         *  the directories specified by the environment variable PATH.
          */
         if (-1 == execvp(argv[0], argv)) {
-          perror("execvp");
-          printf("  (couldn't find command)\n");
+            perror("execvp");
+            printf("  (couldn't find command)\n");
         }
-	/* NOT REACHED unless error occurred */
+        /* NOT REACHED unless error occurred */
         exit(1);
     } else /* parent:  in parent, childpid was set to pid of child process */
         waitpid(childpid, NULL, 0);  /* wait until child process finishes */
     return;
+}
+
+void interrupt_handler(int signum){
+    fprintf(stderr, "singla %d captured. current task will be aborted.\n",signum);
 }
 
 int main(int argc, char *argv[])
@@ -116,26 +120,30 @@ int main(int argc, char *argv[])
     char *childargv[MAXARGS];
     int childargc;
 
-    if (argc >1){ // assosicate stdin  to the file.
+    //signal handler registering. BUG3 done.
+    if( SIG_ERR == signal(SIGINT, interrupt_handler))
+        fprintf(stderr, "singla handler registeration failed: %s\n",strerror(errno));
+
+    if (argc >1){ // assosicate stdin  to the file. BUG2 done.
         stdin = freopen(argv[1], "r", stdin);
         if(stdin == NULL) {
             perror("stdin is null!");
             exit(1);
         }
     }
- 
+
     while (1) {
         printf("%% "); /* printf uses %d, %s, %x, etc.  See 'man 3 printf' */
         fflush(stdout); /* flush from output buffer to terminal itself */
-	getargs(cmd, &childargc, childargv); /* childargc and childargv are
-            output args; on input they have garbage, but getargs sets them. */
+        getargs(cmd, &childargc, childargv); /* childargc and childargv are
+                                                output args; on input they have garbage, but getargs sets them. */
         /* Check first for built-in commands. */
-	if ( childargc > 0 && strcmp(childargv[0], "exit") == 0 )
+        if ( childargc > 0 && strcmp(childargv[0], "exit") == 0 )
             exit(0);
-	else if ( childargc > 0 && strcmp(childargv[0], "logout") == 0 )
+        else if ( childargc > 0 && strcmp(childargv[0], "logout") == 0 )
             exit(0);
         else
-	    execute(childargc, childargv);
+            execute(childargc, childargv);
     }
     /* NOT REACHED */
 }
