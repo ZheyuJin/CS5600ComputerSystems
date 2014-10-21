@@ -27,16 +27,23 @@
  */
 static char * getword(char * begin, char **end_ptr) {
     char * end = begin;
-
+    char * paver = NULL;
     while ( *begin == ' ' )
         begin++;  /* Get rid of leading spaces. */
-    
-    if('#' == *begin) /*on spot of a '#' character*/
-	while ('\n' != *begin) begin++;
-    
+         
     end = begin;
-    while ( *end != '\0' && *end != '\n' && *end != ' ' )
+
+    /* '#' is for the beginning fo comment, which should be treated as
+	end of the command line.*/
+    while ( *end != '\0' && *end != '\n' && *end != ' ' && *end !='#')
         end++;  /* Keep going. */
+
+    if(*end == '#') { /*pave all chars afterward as '\0'*/
+	paver = end;
+	while(*paver != '\0')
+	    *(paver++) = '\0' ;
+    }
+	
     if ( end == begin )
         return NULL;  /* if no more words, return NULL */
     *end = '\0';  /* else put string terminator at end of this word. */
