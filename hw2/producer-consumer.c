@@ -107,7 +107,7 @@ sem_t sem_items;
 
 void* producer_func(void* in){
 	int i =1;
-	for(i=0; i <10; i++){
+	for(i=1; ; i++){
 		int err= sem_wait(&sem_room);
 		LIKELY_RET(err,0,-1);
 
