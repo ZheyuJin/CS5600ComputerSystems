@@ -130,12 +130,18 @@ void* producer_func(void* in){
 }
 
 void* consumer_func(void* in){
+	printf("consumer_func +\n");
 	while(1){
 		sem_wait(&sem_items);
+		printf("consumer_func ++\n");
 		sleep( rand() % 5 );
+		printf("consumer_func --\n");
+
 		printf("%d\n",get());
 		sem_post(&sem_room);	
 	}
+	printf("consumer_func -\n");
+
 }
 
 
