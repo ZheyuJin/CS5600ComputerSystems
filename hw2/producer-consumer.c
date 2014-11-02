@@ -52,13 +52,13 @@ int sem_wait(sem_t *sem){
 	if(NULL == sem)
 		return -1;	
 		
-	int ret = pthread_mutex_lock(&sem->mutex);
+	int err = pthread_mutex_lock(&sem->mutex);
 	LIKELY_RET(err,0,-1);
 	/*
 	be careful to use cond_wait under mutex protection. 
 	*/
 	while(sem->value == 0){
-		ret = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex now
+		err = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex now
 		// !!!auto get lock after return from wait()!!!!
 		LIKELY_RET(err,0,-1);
 	}
