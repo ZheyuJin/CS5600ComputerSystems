@@ -10,16 +10,11 @@
 		return RET; \
 	}
 
-
-
-
 typedef struct sem_t{
         pthread_cond_t cond;
         unsigned int value;
         pthread_mutex_t mutex;
 }sem_t;
-
-
 
 int sem_init(sem_t *sem, int pshared, unsigned int value){
 	if(NULL == sem)
@@ -31,8 +26,6 @@ int sem_init(sem_t *sem, int pshared, unsigned int value){
 	
 	return 0;
 }
-
-
 
 
 /*
@@ -59,17 +52,11 @@ int sem_wait(sem_t *sem){
 	int ret = pthread_mutex_lock(&sem->mutex);
 	
 	/*
-	These  functions  atomically release mutex and cause the calling thread
-       to block on the condition variable cond; atomically here means  "atomi-
-       cally  with  respect  to access by another thread to the mutex and then
-       the condition variable". That is, if another thread is able to  acquire
-       the  mutex after the about-to-block thread has released it, then a sub-
-       sequent call to pthread_cond_broadcast()  or  pthread_cond_signal()  in
-       that  thread shall behave as if it were issued after the about-to-block
-       thread has blocked.
+	be careful to use cond_wait under mutex protection. 
 	*/
 	while(sem->value == 0){
-		ret = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex
+		ret = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex now
+		// !!!auto get lock after return from wait()!!!!
 	}
 	
 	sem->value --;
