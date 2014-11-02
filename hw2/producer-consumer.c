@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define THREAD_CNT  1
+#define THREAD_CNT 3 
 
 #define LIKELY_RET(X,Y,RET) \
     if((X)!= (Y)){ \
@@ -26,12 +26,10 @@ int sem_init(sem_t *sem, int pshared, unsigned int value){
 		return -1;
 		
 	int err = pthread_cond_init(&sem->cond,NULL) ;
-	LIKELY_RET(err,0,-1);
 
 	sem->value = value;
 
 	err = pthread_mutex_init(&sem->mutex,NULL);
-	LIKELY_RET(err,0,-1);
 	
 	return 0;
 }
@@ -47,14 +45,12 @@ int sem_post(sem_t *sem){
 		return -1;	
 		
 	int err = pthread_mutex_lock(&sem->mutex);
-	LIKELY_RET(err,0 , -1);
 	
 	sem->value ++;
-	err = pthread_cond_signal(&sem->cond);
-	LIKELY_RET(err, 0, -1);
-	
+
 	err = pthread_mutex_unlock(&sem->mutex);
-	LIKELY_RET(err, 0, -1);
+
+	err = pthread_cond_signal(&sem->cond);
 	
 	return 0;
 }
@@ -67,7 +63,6 @@ int sem_wait(sem_t *sem){
 		return -1;	
 		
 	int ret = pthread_mutex_lock(&sem->mutex);
-	LIKELY_RET(ret, 0, -1);
 	
 	/*
 	These  functions  atomically release mutex and cause the calling thread
@@ -81,15 +76,13 @@ int sem_wait(sem_t *sem){
 	*/
 	if(sem->value == 0){
 		ret = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex
-		LIKELY_RET(ret, 0, -1);
-		pthread_mutex_lock(&sem->mutex);
+		//pthread_mutex_lock(&sem->mutex);
 		sem->value --;
 		pthread_mutex_unlock(&sem->mutex);
 	}
 	else{
 		sem->value --;
 		ret = pthread_mutex_unlock(&sem->mutex);
-		LIKELY_RET(ret, 0, -1);	
 	}
 	
 	return 0;
@@ -123,12 +116,12 @@ sem_t sem_room;
 sem_t sem_items;
 
 void* producer_func(void* in){
-	int i =0;
-	for(i=0; ; i++){
-		printf("producer waint +\n");
+	int i =1;
+	for(i=0; i <10; i++){
+		printf("producer wait +\n");
 
 		sem_wait(&sem_room);
-		sleep( rand() % 5 ); //sleep
+//		sleep( rand() % 5 ); //sleep
 		put(i);
 
 		printf("producer post +\n");		
@@ -137,21 +130,19 @@ void* producer_func(void* in){
 }
 
 void* consumer_func(void* in){
-	printf("consumer_func +\n");
 	while(1){
 		printf("consumer wait +\n");
 
 		sem_wait(&sem_items);
 		printf("consumer sleep +\n");
-		sleep( rand() % 5 );
+//		sleep( rand() % 5 );
 		printf("consumer sleep -\n");
 
-		printf("%d\n",get());
+		printf("num %d\n",get());
 		
 		printf("consumer post +\n");
 		sem_post(&sem_room);	
 	}
-	printf("consumer_func -\n");
 
 }
 
@@ -162,22 +153,17 @@ int main(){
 	int err =0;
 	
 	err = sem_init(&sem_room, 0, 4); // 4 slots all empty
-	LIKELY_RET(err, 0, -1);	
 	err = sem_init(&sem_items, 0, 0);
-	LIKELY_RET(err, 0, -1);
 	
 	int i;
 	for(i=0; i< THREAD_CNT; i++){ // make consumers
 		err = pthread_create(&consumers[i], NULL, consumer_func, NULL);
-		LIKELY_RET(err, 0, -1);
 	}
 
 	for(i=0; i< THREAD_CNT; i++){ // make producers
 		err = pthread_create(&producers[i], NULL, producer_func, NULL);
-		LIKELY_RET(err, 0, -1);
 
 	}
-	printf("what?");
 	pthread_join(consumers[0],NULL);
 	return 0;
 }
