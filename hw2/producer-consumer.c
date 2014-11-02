@@ -26,9 +26,7 @@ int sem_init(sem_t *sem, int pshared, unsigned int value){
 		return -1;
 		
 	int err = pthread_cond_init(&sem->cond,NULL) ;
-
 	sem->value = value;
-
 	err = pthread_mutex_init(&sem->mutex,NULL);
 	
 	return 0;
@@ -45,13 +43,9 @@ int sem_post(sem_t *sem){
 		return -1;	
 		
 	int err = pthread_mutex_lock(&sem->mutex);
-	
 	sem->value ++;
-
-	err = pthread_mutex_unlock(&sem->mutex);
-
 	err = pthread_cond_signal(&sem->cond);
-	
+	err = pthread_mutex_unlock(&sem->mutex);
 	return 0;
 }
 
@@ -74,16 +68,12 @@ int sem_wait(sem_t *sem){
        that  thread shall behave as if it were issued after the about-to-block
        thread has blocked.
 	*/
-	if(sem->value == 0){
+	while(sem->value == 0){
 		ret = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex
-		//pthread_mutex_lock(&sem->mutex);
-		sem->value --;
-		pthread_mutex_unlock(&sem->mutex);
 	}
-	else{
-		sem->value --;
-		ret = pthread_mutex_unlock(&sem->mutex);
-	}
+	
+	sem->value --;
+	pthread_mutex_unlock(&sem->mutex);
 	
 	return 0;
 }
