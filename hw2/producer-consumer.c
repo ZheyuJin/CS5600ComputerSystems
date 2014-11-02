@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define THREAD_CNT  3
+#define THREAD_CNT  1
 
 #define LIKELY_RET(X,Y,RET) \
     if((X)!= (Y)){ \
@@ -15,7 +15,7 @@
 
 typedef struct sem_t{
         pthread_cond_t cond;
-        int value;
+        unsigned int value;
         pthread_mutex_t mutex;
 }sem_t;
 
@@ -28,7 +28,7 @@ int sem_init(sem_t *sem, int pshared, unsigned int value){
 	int err = pthread_cond_init(&sem->cond,NULL) ;
 	LIKELY_RET(err,0,-1);
 
-	sem->value = 0;
+	sem->value = value;
 
 	err = pthread_mutex_init(&sem->mutex,NULL);
 	LIKELY_RET(err,0,-1);
@@ -82,6 +82,9 @@ int sem_wait(sem_t *sem){
 	if(sem->value == 0){
 		ret = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex
 		LIKELY_RET(ret, 0, -1);
+		pthread_mutex_lock(&sem->mutex);
+		sem->value --;
+		pthread_mutex_unlock(&sem->mutex);
 	}
 	else{
 		sem->value --;
@@ -122,9 +125,13 @@ sem_t sem_items;
 void* producer_func(void* in){
 	int i =0;
 	for(i=0; ; i++){
+		printf("producer waint +\n");
+
 		sem_wait(&sem_room);
 		sleep( rand() % 5 ); //sleep
 		put(i);
+
+		printf("producer post +\n");		
 		sem_post(&sem_items);	
 	}
 }
@@ -132,12 +139,16 @@ void* producer_func(void* in){
 void* consumer_func(void* in){
 	printf("consumer_func +\n");
 	while(1){
+		printf("consumer wait +\n");
+
 		sem_wait(&sem_items);
-		printf("consumer_func ++\n");
+		printf("consumer sleep +\n");
 		sleep( rand() % 5 );
-		printf("consumer_func --\n");
+		printf("consumer sleep -\n");
 
 		printf("%d\n",get());
+		
+		printf("consumer post +\n");
 		sem_post(&sem_room);	
 	}
 	printf("consumer_func -\n");
@@ -167,6 +178,7 @@ int main(){
 
 	}
 	printf("what?");
+	pthread_join(consumers[0],NULL);
 	return 0;
 }
 
