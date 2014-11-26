@@ -10,13 +10,20 @@
  * For example, "man fork" (or "man 2 fork" or man -s 2 fork") requires:
  *   <sys/types.h> and <unistd.h>
  */
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
 #include <errno.h> /*to use errno*/
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 #include <string.h>
+
+
+
 
 #define MAXLINE 200  /* This is how we declare constants in C */
 #define MAXARGS 20
@@ -111,8 +118,9 @@ static void pipe_child(int argc, char *argv[]){
 	int pfd[2];
 
 	if (pipe(pfd) == -1) { perror("pipe"); exit(EXIT_FAILURE);}
-
-	for(int i=1; i<=2; i++){
+	
+	int i=1;
+	for(; i<=2; i++){
 		pid_t child_pid = fork();
 		if(child_pid > 0){ // parent
 			pids[my_num++] = child_pid;// my child will see it.											
@@ -232,13 +240,11 @@ static void redir_one_child(int argc, char *argv[]){
 static void execute(int argc, char *argv[]){
 	switch(argc){
 		case 1: // simple  case: e.g. "ls"
-			int const shallwait =1;// wait for child to finish
-			one_child(argc, argv,shallwait);
+			one_child(argc, argv,1);
 			break;
 
 		case 2: // 2 parts e.g. "ls &". run child process in backgroud, no wait().
-			int const shallwait =0; // no wait.
-			one_child(argc, argv,shallwait);
+			one_child(argc, argv,0);
 			break;
 
 		case 3: // 3 parts e.g. "ls | wc", "< hi.txt wc", "> hi.txt wc", "wc < hi.txt" "wc > hi.txt"
