@@ -170,7 +170,7 @@ static void pipe_child(int argc, char *argv[]){
 		}
 		else{// error		
 			perror(strerror(errno));
-			eixt(errno);
+			exit(errno);
 		}
 	}
 
@@ -190,7 +190,7 @@ static void redir_one_child(int argc, char *argv[]){
 
 	if(pid <0){ //err
 		perror(strerror(errno));
-		eixt(errno);
+		exit(errno);
 	}else if(pid >0){ // parent
 		waitpid(pid, NULL, 0);
 		return;
