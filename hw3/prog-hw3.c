@@ -216,8 +216,8 @@ static void redir_one_child(int argc, char *argv[]){
 
 	if(redir = '<'){ // stdin redir
 		close(STDIN_FILENO);
-		fd = open(*filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR); // reusing STDIN_FILENO
-		if (fd == -1) perror("open for writing");		
+		fd = open(*filename, O_RDONLY); // reusing STDIN_FILENO
+		if (fd == -1) perror("open for reading");		
 	}else{ //stdout redir
 		close(STDOUT_FILENO);
 		fd = open(*filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR); // reusing STDIN_FILENO
