@@ -100,6 +100,8 @@ static void one_child(int argc, char *argv[], int shallwait){
 		printf("  (failed to execute command)\n");
 	}
 	if (childpid == 0) { /* child:  in child, childpid was set to 0 */
+
+		argv[1]=NULL;	
 		argv[2]=NULL;
 		if (-1 == execvp(argv[0], argv)) {
 			perror("execvp");
@@ -133,8 +135,7 @@ static void pipe_child(int argc, char *argv[]){
 				close(STDOUT_FILENO);
 
 				if(dup(pfd[1]) == -1){ //redirect
-					perror("cannot redirect output to pipe.");
-					perror(strerror(errno));
+					perror("cannot redirect stdout  to pipe.");
 					exit(errno);
 				}
 
@@ -152,9 +153,8 @@ static void pipe_child(int argc, char *argv[]){
 				/* pipe setup*/
 				close(pfd[1]); 
 				close(STDIN_FILENO);
-				if(dup(pfd[1]) == -1){ // redirect
-					perror("cannot redirect output to pipe.");
-					perror(strerror(errno));
+				if(dup(pfd[0]) == -1){ // redirect
+					perror("cannot redirect stdin  to pipe.");
 					exit(errno);
 				}
 
@@ -256,7 +256,6 @@ static void execute(int argc, char *argv[]){
 			break;
 
 		default:
-			perror("arg count abnormal! please check.\n");
 			break;
 	}
 }
