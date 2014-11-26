@@ -100,6 +100,7 @@ static void one_child(int argc, char *argv[], int shallwait){
 		printf("  (failed to execute command)\n");
 	}
 	if (childpid == 0) { /* child:  in child, childpid was set to 0 */
+		argv[2]=NULL;
 		if (-1 == execvp(argv[0], argv)) {
 			perror("execvp");
 			printf("  (couldn't find command)\n");
