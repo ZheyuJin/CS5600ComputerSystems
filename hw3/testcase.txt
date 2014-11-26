@@ -1,0 +1,9 @@
+ls
+ls#this shoud have no effect.
+####the whole line is ignored.
+ls# # # #
+ls ### ##
+ls        #still works.
+#ls
+##ls
+
