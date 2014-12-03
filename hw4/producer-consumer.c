@@ -11,7 +11,7 @@
 	}
 
 typedef struct sem_t{
-        unsigned int value;
+        unsigned int value; // never goes below 0.
         pthread_mutex_t mutex;
 }sem_t;
 
@@ -48,7 +48,7 @@ int sem_wait(sem_t *sem){
 		return -1;	
 
 busywait:
-	while(sem->value <=0); // busy wait. blocking here.
+	while(sem->value ==0); // busy wait. blocking here. value never goes below 0.
 		
 	/* critical setion upcomming.*/
 	int err = pthread_mutex_lock(&sem->mutex);
