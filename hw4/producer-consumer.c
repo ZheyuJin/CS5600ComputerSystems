@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define THREAD_CNT 30
+#define THREAD_CNT 2
 
 #define LIKELY_RET(X,Y,RET) \
     if((X)!= (Y)){ \
@@ -20,7 +20,7 @@ int sem_init(sem_t *sem, int pshared, unsigned int value){
 		return -1;
 		
 	sem->value = value;
-	err = pthread_mutex_init(&sem->mutex,NULL);
+	int err = pthread_mutex_init(&sem->mutex,NULL);
 	LIKELY_RET(err,0,-1);
 	return 0;
 }
@@ -110,7 +110,7 @@ void* producer_func(void* in){
 		int err= sem_wait(&sem_room);  // block here until space available
 		LIKELY_RET(err,0,-1);
 
-		//sleep( rand() % 5 ); //sleep
+		sleep( rand() % 5 ); //sleep
 		put(i);
 
 		err = sem_post(&sem_items);	
@@ -123,7 +123,7 @@ void* consumer_func(void* in){
 		int err= sem_wait(&sem_items); // block here until product available
 		LIKELY_RET(err,0,-1);
 		
-		//sleep( rand() % 5 );
+		sleep( rand() % 5 );
 		printf("%d\n",get());
 		
 		err = sem_post(&sem_room);	
