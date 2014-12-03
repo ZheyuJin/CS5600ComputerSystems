@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define THREAD_CNT 300 
+#define THREAD_CNT 30
 
 #define LIKELY_RET(X,Y,RET) \
     if((X)!= (Y)){ \
@@ -11,7 +11,6 @@
 	}
 
 typedef struct sem_t{
-        pthread_cond_t cond;
         unsigned int value;
         pthread_mutex_t mutex;
 }sem_t;
@@ -20,8 +19,6 @@ int sem_init(sem_t *sem, int pshared, unsigned int value){
 	if(NULL == sem)
 		return -1;
 		
-	int err = pthread_cond_init(&sem->cond,NULL) ;
-	LIKELY_RET(err,0,-1);
 	sem->value = value;
 	err = pthread_mutex_init(&sem->mutex,NULL);
 	LIKELY_RET(err,0,-1);
@@ -38,8 +35,6 @@ int sem_post(sem_t *sem){
 		
 	int err = pthread_mutex_lock(&sem->mutex);
 	sem->value ++;
-	err = pthread_cond_signal(&sem->cond);
-	LIKELY_RET(err,0,-1);
 	err = pthread_mutex_unlock(&sem->mutex);
 	LIKELY_RET(err,0,-1);
 	return 0;
@@ -51,21 +46,25 @@ EINVAL sem is not a valid semaphore.
 int sem_wait(sem_t *sem){
 	if(NULL == sem)
 		return -1;	
+
+busywait:
+	while(sem->value <=0); // busy wait. blocking here.
 		
+	/* critical setion upcomming.*/
 	int err = pthread_mutex_lock(&sem->mutex);
 	LIKELY_RET(err,0,-1);
-	/*
-	be careful to use cond_wait under mutex protection. 
-	*/
-	while(sem->value == 0){
-		err = pthread_cond_wait(&sem->cond,&sem->mutex);// auto release mutex now
-		// !!!auto get lock after return from wait()!!!!
+	
+	if(sem->value > 0){// my turn.
+		sem->value --;
+		err = pthread_mutex_unlock(&sem->mutex);
+		LIKELY_RET(err,0,-1);		
+	}
+	else{// not my turn, go back to busy wait.
+		err = pthread_mutex_unlock(&sem->mutex);
 		LIKELY_RET(err,0,-1);
+		goto busywait; 
 	}
 	
-	sem->value --;
-	err = pthread_mutex_unlock(&sem->mutex);
-	LIKELY_RET(err,0,-1);
 	return 0;
 }
 
@@ -108,7 +107,7 @@ sem_t sem_items;
 void* producer_func(void* in){
 	int i =1;
 	for(i=1; ; i++){
-		int err= sem_wait(&sem_room);
+		int err= sem_wait(&sem_room);  // block here until space available
 		LIKELY_RET(err,0,-1);
 
 		//sleep( rand() % 5 ); //sleep
@@ -121,7 +120,7 @@ void* producer_func(void* in){
 
 void* consumer_func(void* in){
 	while(1){
-		int err= sem_wait(&sem_items);
+		int err= sem_wait(&sem_items); // block here until product available
 		LIKELY_RET(err,0,-1);
 		
 		//sleep( rand() % 5 );
